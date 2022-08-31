@@ -4,14 +4,17 @@ from glob import glob
 
 
 package_name = 'self_driving_car_pkg'
-config_module = "self_driving_car_pkg/config" 
+config_module = "self_driving_car_pkg/config"
+detection_module="self_driving_car_pkg/Detection"
+detection_lanes_module="self_driving_car_pkg/Detection/Lanes"
+
 
 
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name,config_module],
+    packages=[package_name,config_module,detection_module,detection_lanes_module],
 
     data_files=[
         ('share/ament_index/resource_index/packages',
