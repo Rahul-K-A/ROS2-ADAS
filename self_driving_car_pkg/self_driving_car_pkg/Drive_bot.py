@@ -1,5 +1,5 @@
 import cv2
-from .Detection.Lanes.DetectLanes import detectLanes
+from .Detection.Lanes.lane_detection import detect_lanes
 from numpy import interp
 class Control():
     def __init__(self):
@@ -84,7 +84,7 @@ class Car():
         # resizing to minimize computation time while still achieving comparable results
         img = cv2.resize(img,(320,240))
 
-        distance, Curvature = detectLanes(img)
+        distance, Curvature = detect_lanes(img)
         Current_State = [distance,Curvature,img]
         
         self.Control.drive(Current_State)

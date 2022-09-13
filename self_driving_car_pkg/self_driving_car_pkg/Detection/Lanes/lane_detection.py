@@ -1,23 +1,17 @@
-from .ColorSegmentation import segmentLanes
-from ...config import config
 import cv2
 
-
-import cv2
-
-from .ColorSegmentation import segmentLanes
-from .MidLaneEstimation import estimate_midlane
-from .Cleaning import GetYellowInnerEdge,ExtendShortLane
-from .DataExtraction import FetchInfoAndDisplay
+from .a_colour_segmentation import SegmentLanes
+from .b_midlane_estimation import estimate_midlane
 from ...config import config
+from .c_cleaning import GetYellowInnerEdge,ExtendShortLane
+from .d_data_extraction import FetchInfoAndDisplay
 
 
-
-def detectLanes(img):
+def detect_lanes(img):
     # cropping the roi (e.g keeping only below the horizon)
     img_cropped = img[config.CropHeight_resized:,:]
 
-    mid_lane_mask,mid_lane_edge,outer_lane_edge,outerlane_side_sep,outerlane_points = segmentLanes(img_cropped,config.minArea_resized)
+    mid_lane_mask,mid_lane_edge,outer_lane_edge,outerlane_side_sep,outerlane_points = SegmentLanes(img_cropped,config.minArea_resized)
 
     estimated_midlane = estimate_midlane(mid_lane_edge,config.MaxDist_resized)
 
@@ -42,3 +36,6 @@ def detectLanes(img):
     cv2.waitKey(1)
 
     return Distance,Curvature
+    
+
+

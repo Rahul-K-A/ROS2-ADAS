@@ -5,14 +5,19 @@ import time
 from .utilities import Distance, Distance_
 from ...config import config
 
-def BwareaOpen(img,MinArea):
+def RejectSmallerContours(img,MinArea):
 
     thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)[1]
+    cv2.imshow("thresh_img",thresh)
+    #cv2.waitKey(100)
     # Filter using contour area and remove small noise
-    cnts = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
     cnts_TooSmall = []
-    for index, cnt in enumerate(cnts):
-        area = cv2.contourArea(cnt)
+    for cnt in cnts:
+        try:
+            area = cv2.contourArea(cnt)
+        except:
+            area=0
         if area < MinArea:
             cnts_TooSmall.append(cnt)
     
@@ -74,10 +79,11 @@ def RetLargestContour_OuterLane(gray,minArea):
     bin_img = bin_img_ret
     #################################### TESTING SHADOW BREAKER CODE BY DILATING####################
 
-    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    print("Contours:",cnts)
     Max_Cntr_area = 0
     Max_Cntr_idx= -1
-    for index, cnt in enumerate(cnts):
+    for index, cnt in enumerate(cnts[0]):
         area = cv2.contourArea(cnt)
         if area > Max_Cntr_area:
             Max_Cntr_area = area
@@ -87,7 +93,7 @@ def RetLargestContour_OuterLane(gray,minArea):
     if Max_Cntr_area < minArea:
         LargestContour_Found = False
     if ((Max_Cntr_idx!=-1) and (LargestContour_Found)):
-        thresh = cv2.drawContours(thresh, cnts, Max_Cntr_idx, (255,255,255), -1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
+        thresh = cv2.drawContours(thresh, [cnts[0]], Max_Cntr_idx, (255,255,255), -1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
     return thresh, LargestContour_Found
 
 def ROI_extracter(image,strtPnt,endPnt):

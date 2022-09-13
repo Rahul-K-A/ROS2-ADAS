@@ -1,4 +1,3 @@
-
 import numpy as np
 import cv2
 import math 
@@ -93,3 +92,5 @@ def average_2b_(Edge_ROI):
     #cv2.namedWindow("TrajectoryOnEdge",cv2.WINDOW_NORMAL)
     #cv2.imshow("TrajectoryOnEdge",TrajectoryOnEdge)
     return Lane_detected
+
+
