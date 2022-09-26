@@ -1,15 +1,15 @@
 import cv2
 import numpy as np
 
-from .utilities import Cord_Sort,findlaneCurvature
+from .utilities import Sort_Contour_Coordinates,findlaneCurvature
 
 def LanePoints(midlane,outerlane,offset):
     mid_cnts = cv2.findContours(midlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
     outer_cnts = cv2.findContours(outerlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
 
     if mid_cnts and outer_cnts:
-        mid_cnts_row_sorted = Cord_Sort(mid_cnts,"rows")
-        outer_cnts_row_sorted = Cord_Sort(outer_cnts,"rows")
+        mid_cnts_row_sorted = Sort_Contour_Coordinates(mid_cnts,"rows")
+        outer_cnts_row_sorted = Sort_Contour_Coordinates(outer_cnts,"rows")
 
         m_rows = mid_cnts_row_sorted.shape[0]
         o_rows = outer_cnts_row_sorted.shape[0]

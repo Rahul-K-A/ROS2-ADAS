@@ -10,28 +10,28 @@ def Distance(a,b):
     distance = math.sqrt( ((a_x-b_x)**2)+((a_y-b_y)**2) )
     return distance
 
-def Distance_(a,b):
+def GetEuclideanDistance(a,b):
     return math.sqrt( ( (a[1]-b[1])**2 ) + ( (a[0]-b[0])**2 ) )
 
 def findlaneCurvature(x1,y1,x2,y2):
-    offset_Vert=90# angle found by tan-1 (slop) is wrt horizontal --> This will shift to wrt Vetical
+    offset_Vert = 90 # angle found by tan-1 (slop) is wrt horizontal --> This will shift to wrt Vetical
 
     if((x2-x1)!=0):
         slope = (y2-y1)/(x2-x1)
         y_intercept = y2 - (slope*x2) #y= mx+c
-        anlgeOfinclination = math.atan(slope) * (180 / np.pi)#Conversion to degrees
+        angleOfinclination = math.atan(slope) * (180 / np.pi)#Conversion to degrees
     else:
-        slope=1000#infinity
-        y_intercept=0#None [Line never crosses the y axis]
+        slope=1000    #infinity
+        y_intercept=0 # None [Line never crosses the y axis]
 
-        anlgeOfinclination = 90#vertical line
+        angleOfinclination = 90#vertical line
 
         #print("Vertical Line [Undefined slope]")
-    if(anlgeOfinclination!=90):
-        if(anlgeOfinclination<0):#right side
-            angle_wrt_vertical = offset_Vert + anlgeOfinclination
+    if(angleOfinclination!=90):
+        if(angleOfinclination<0):#right side
+            angle_wrt_vertical = offset_Vert + angleOfinclination
         else:#left side
-            angle_wrt_vertical = anlgeOfinclination - offset_Vert
+            angle_wrt_vertical = angleOfinclination - offset_Vert
     else:
         angle_wrt_vertical= 0#aligned
     return angle_wrt_vertical
@@ -46,21 +46,22 @@ def findLineParameter(x1,y1,x2,y2):
         #print("Vertical Line [Undefined slope]")
     return (slope,y_intercept)
 
-def Cord_Sort(cnts,order):
-
-    if cnts:
-        cnt=cnts[0]
-        cnt=np.reshape(cnt,(cnt.shape[0],cnt.shape[2]))
+#Sort the coordinates of contour edges from top to bottom and right to left
+#Last value of the sorted contours will be the bottom most and left most non zero point of the contours 
+def Sort_Contour_Coordinates(contours,order):
+    if contours:
+        contour=contours[0]
+        contour=np.reshape(contour,(contour.shape[0],contour.shape[2]))
         order_list=[]
         if(order=="rows"):
             order_list.append((0,1))
         else:
             order_list.append((1,0))
-        ind = np.lexsort((cnt[:,order_list[0][0]],cnt[:,order_list[0][1]]))
-        Sorted=cnt[ind]
+        ind = np.lexsort(( contour[:,order_list[0][0]], contour[:,order_list[0][1]] ))
+        Sorted=contour[ind]
         return Sorted
     else:
-        return cnts
+        return contours
 
 def average_2b_(Edge_ROI):
     #First Threshold data
