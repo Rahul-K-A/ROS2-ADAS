@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import math
 import time
-from .utilities import Distance, GetEuclideanDistance
+from .utilities import  GetEuclideanDistance
 from ...config import config
 
 
@@ -30,6 +30,7 @@ def FindTopAndBottomExtremes(img):
     
     #If the image is empty, return 0,0
     if (len(positions)!=0):
+        #Find top , bottom , left , right most white/non-black points in the image
         top = positions[0].min()
         bottom = positions[0].max()
         left = positions[1].min()
@@ -125,50 +126,55 @@ def ExtractPoint(img,specified_row):
         Point=(min_col,specified_row)
     return Point
 
-def ReturnLowestEdgePoints(gray):
+def ReturnLowestEdgePoints(contourImage):
     Outer_Points_list=[]
-    thresh = np.zeros(gray.shape,dtype=gray.dtype)
-    Lane_OneSide=np.zeros(gray.shape,dtype=gray.dtype)
-    Lane_TwoSide=np.zeros(gray.shape,dtype=gray.dtype)
+    thresh = np.zeros_like(contourImage)
+    thresh1=thresh.copy()
+    thresh2=thresh.copy()
+    
+    Lane_OneSide=np.zeros_like(contourImage)
+    Lane_TwoSide=np.zeros_like(contourImage)
 
     #Threshold the image to remove noise
-    _,bin_img = cv2.threshold(gray,0,255,cv2.THRESH_BINARY)
+    _,bin_img = cv2.threshold(contourImage,0,255,cv2.THRESH_BINARY)
     
     #Find the two Contours for which you want to find the min distance between them.
     cnts = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[1]
     thresh = cv2.drawContours(thresh, cnts, 0, (255,255,255), 1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
-    
-    # Boundary of the Contour is extracted and Saved in Thresh
-    Top_Row,Bottom_Row = FindTopAndBottomExtremes(thresh)
-    
-    cv2.imshow("thresh",thresh)
-    
-    Contour_TopBot_PortionCut = ROI_extracter(thresh,(0, Top_Row + 5),(thresh.shape[1],Bottom_Row-5))
 
-    cnts2 = cv2.findContours(Contour_TopBot_PortionCut, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[1]
 
+    cnts2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[1]
+    
+    # cv2.imshow("Thresh11",thresh)
+    # cv2.imshow("Thresh22",thresh2)
+    
     LowRow_a=-1
     LowRow_b=-1
     
     Euc_row=0# Row for the points to be compared
 
     First_line = np.copy(Lane_OneSide)
-    cnts_tmp = []
+    conts_tmp = []
 
-
+    #Remove noise if present by taking only the largest contour the frame
     if(len(cnts2)>1):
         for index_tmp, cnt_tmp in enumerate(cnts2):
             if((cnt_tmp.shape[0])>50):
-                cnts_tmp.append(cnt_tmp)
-        cnts2 = cnts_tmp
-
+                conts_tmp.append(cnt_tmp)
+        cnts2 = conts_tmp
+        # thresh2 = cv2.drawContours(thresh, cnts2, 0, (255,255,255), 1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
+        # cv2.imshow("Thresh22",thresh2)
+           
+           
+     
     for index, cnt in enumerate(cnts2):
-        Lane_OneSide = np.zeros(gray.shape,dtype=gray.dtype)
-        Lane_OneSide = cv2.drawContours(Lane_OneSide, cnts2, index, (255,255,255), 1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
+        Lane_OneSide = np.zeros(contourImage.shape,dtype=contourImage.dtype)
+        Lane_OneSide = cv2.drawContours(Lane_OneSide, cnts2, index, (255,255,255), 1) 
         Lane_TwoSide = cv2.drawContours(Lane_TwoSide, cnts2, index, (255,255,255), 1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
 
         if(len(cnts2)==2):
-            if (index==0):
+            print("!!")
+            if (index==0): 
                 First_line = np.copy(Lane_OneSide)
                 LowRow_a = FindLowestRow(Lane_OneSide)
             elif(index==1):
@@ -181,6 +187,9 @@ def ReturnLowestEdgePoints(gray):
                 Point_b = ExtractPoint(Lane_OneSide,Euc_row)
                 Outer_Points_list.append(Point_a)
                 Outer_Points_list.append(Point_b)
+    
+    
+
     
     return Lane_TwoSide, Outer_Points_list
 
@@ -198,70 +207,3 @@ def ApproxDistanceBetweenCenters(cnt,cnt_cmp):
     Centroid_b=(cX_cmp,cY_cmp)
     return minDist,Centroid_a,Centroid_b
 
-def Estimate_MidLane(BW,MaxDistance):
-    #cv2.namedWindow("BW_zero",cv2.WINDOW_NORMAL)
-    BW_zero= cv2.cvtColor(BW,cv2.COLOR_GRAY2BGR)
-    #Find the two Contours for which you want to find the min distance between them.
-    cnts= cv2.findContours(BW, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]#3ms
-    MinArea=1
-    cnts_Legit=[]
-    for index, _ in enumerate(cnts):
-        area = cv2.contourArea(cnts[index])
-        if area > MinArea:
-            cnts_Legit.append(cnts[index])
-    cnts=cnts_Legit
-    # Cycle through each point in the Two contours & find the distance between them.
-    # Take the minimum Distance by comparing all other distances & Mark that Points.
-    CntIdx_BstMatch = []# [BstMatchwithCnt0,BstMatchwithCnt1,....]
-    Closests_Pixels_list = []
-    #200msec
-    for index, cnt in enumerate(cnts):
-        prevmin_dist = 100000
-        Bstindex_cmp = 0
-        #BstClosests_Pixels =0 
-        BstCentroid_a=0      
-        BstCentroid_b=0      
-        for index_cmp in range(len(cnts)-index):
-            index_cmp = index_cmp + index
-            cnt_cmp = cnts[index_cmp]
-            if (index!=index_cmp):
-                min_dist,Centroid_a,Centroid_b  = ApproxDistanceBetweenCenters(cnt,cnt_cmp)
-
-                #Closests_Pixels=(cnt[min_dstPix_Idx[0]],cnt_cmp[min_dstPix_Idx[1]])
-                if(min_dist < prevmin_dist):
-                    if (len(CntIdx_BstMatch)==0):
-                        prevmin_dist = min_dist
-                        Bstindex_cmp = index_cmp
-                        #BstClosests_Pixels = Closests_Pixels
-                        BstCentroid_a=Centroid_a
-                        BstCentroid_b=Centroid_b   
-
-                    else:
-                        Present= False
-                        for i in range(len(CntIdx_BstMatch)):
-                            if ( (index_cmp == i) and (index == CntIdx_BstMatch[i]) ):
-                                Present= True
-                        if not Present:
-                            prevmin_dist = min_dist
-                            Bstindex_cmp = index_cmp
-                            #BstClosests_Pixels = Closests_Pixels
-                            BstCentroid_a=Centroid_a
-                            BstCentroid_b=Centroid_b   
-        if ((prevmin_dist!=100000 ) and (prevmin_dist>MaxDistance)):
-            break
-        if (type(BstCentroid_a)!=int):
-            CntIdx_BstMatch.append(Bstindex_cmp)
-            #Closests_Pixels_list.append(BstClosests_Pixels)
-            #cv2.line(BW_zero,(BstClosests_Pixels[0][0][0],BstClosests_Pixels[0][0][1]),(BstClosests_Pixels[1][0][0],BstClosests_Pixels[1][0][1]),(0,0,255),thickness=2)
-            cv2.line(BW_zero,BstCentroid_a,BstCentroid_b,(0,255,0),thickness=2)
-            #cv2.imshow("BW_zero",BW_zero)
-    
-    #cv2.imwrite("D:/Had_LuQ/MidlaneClosestJoined.png",BW_zero)
-    BW_zero = cv2.cvtColor(BW_zero,cv2.COLOR_BGR2GRAY)
-
-    BW_Largest,Largest_found = ReturnLargestContour(BW_zero)#3msec
-
-    if(Largest_found):
-        return BW_Largest
-    else:
-        return BW

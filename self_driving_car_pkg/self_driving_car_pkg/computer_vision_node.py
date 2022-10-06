@@ -1,3 +1,4 @@
+from ast import Add
 import cv2
 from geometry_msgs.msg import Twist
 from rclpy.node import Node 
@@ -5,6 +6,15 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image 
 import rclpy
 from .Drive_bot import Car
+from random import randint
+
+
+def AddNoise(img):
+    for i in range(10):
+        center=(randint(0,1280),randint(0,720))
+        radius=randint(0,20)
+        cv2.circle(img,center,radius,(255,255,255),-1)
+        
 class Video_feed_in(Node):
     def __init__(self):
 
@@ -23,6 +33,8 @@ class Video_feed_in(Node):
     def process_data(self, data): 
 
         frame = self.bridge.imgmsg_to_cv2(data,'bgr8') # performing conversion
+      #  print(frame.shape)
+        #AddNoise(frame)
         
         Angle,Speed,img = self.Car.drive_car(frame)
 
@@ -41,4 +53,5 @@ def main(args=None):
 
 if __name__ == '__main__':
 	main()
+
 

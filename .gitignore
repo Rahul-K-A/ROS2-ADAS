@@ -20,6 +20,7 @@ self_driving_car_pkg/self_driving_car_pkg/Detection/TrafficLights/HaarCascade/Tr
 self_driving_car_pkg/self_driving_car_pkg/Detection/TrafficLights/HaarCascade/Training/Negative/*
 self_driving_car_pkg/self_driving_car_pkg/Detection/TrafficLights/HaarCascade/Training/Positive/*
 self_driving_car_pkg/self_driving_car_pkg/Detection/TrafficLights/HaarCascade/Training/Augmented_Positives/*
+self_driving_car_pkg/self_driving_car_pkg/data/*
 
 # Distribution / packaging
 .Python

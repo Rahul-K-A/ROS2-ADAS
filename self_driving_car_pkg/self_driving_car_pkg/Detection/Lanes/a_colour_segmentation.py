@@ -3,7 +3,7 @@ import numpy as np
 
 from .Morph_op import RejectSmallerContours, ReturnLowestEdgePoints,ReturnLargestContour_OuterLane
 
-
+debuggingEnabled=False
 hls = 0
 src = 0
 
@@ -25,8 +25,10 @@ def maskextract():
     #Apply masks
     whiteRegion = cv2.bitwise_and(src,src,mask=maskWhite)
     yellowRegion = cv2.bitwise_and(src,src,mask=maskYellow)
-    cv2.imshow('white_regions',whiteRegion)
-    cv2.imshow('yellow_regions',yellowRegion)
+    
+    if debuggingEnabled:
+        cv2.imshow('white_regions',whiteRegion)
+        cv2.imshow('yellow_regions',yellowRegion)
 
 
 def GetLargerObjectsOnly(frame,mask,min_area):
@@ -48,7 +50,11 @@ def SegmentMidLane(frame,white_regions,min_area):
 
 def SegmentOuterLane(frame,yellow_regions,min_area):
     outer_points_list = []
+    
+    #Get just the larger contours
     mask,edges = GetLargerObjectsOnly(frame,yellow_regions,min_area)
+    
+    #Return the largest contour within the large contours
     mask_largest, largest_found = ReturnLargestContour_OuterLane(mask,min_area)
 
     if largest_found:
@@ -83,10 +89,12 @@ def SegmentLanes(frame,min_area):
     # Segmenting White regions
     whiteRegion = SegmentByColor(hls,np.array([hue_l,lit_l,sat_l]),np.array([255,255,255]))
     yellowRegion = SegmentByColor(hls,np.array([hue_l_y,lit_l_y,sat_l_y]),np.array([hue_h_y,255,255]))
-
-    cv2.imshow("white_regions",whiteRegion)
-    cv2.imshow("yellow_regions",yellowRegion)
-    cv2.waitKey(1)
+    
+    
+    if debuggingEnabled:
+        cv2.imshow("white_regions",whiteRegion)
+        cv2.imshow("yellow_regions",yellowRegion)
+        cv2.waitKey(1)
 
     # Semgneting midlane from white regions
     MidLaneMask,MidLaneEdge = SegmentMidLane(frame,whiteRegion,min_area)
@@ -94,6 +102,6 @@ def SegmentLanes(frame,min_area):
     # Semgneting outerlane from yellow regions
     OuterLaneEdge,outerlane_side_sep,OuterLanePoints= SegmentOuterLane(frame,yellowRegion,min_area+500)        
 
-    return MidLaneMask,MidLaneEdge,OuterLaneEdge,outerlane_side_sep,OuterLaneEdge
+    return MidLaneMask,MidLaneEdge,OuterLaneEdge,outerlane_side_sep,OuterLanePoints
     
 

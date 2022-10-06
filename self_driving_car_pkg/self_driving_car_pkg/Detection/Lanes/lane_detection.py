@@ -3,7 +3,7 @@ import cv2
 from .a_colour_segmentation import SegmentLanes
 from .b_midlane_estimation import estimate_midlane
 from ...config import config
-from .c_cleaning import GetYellowInnerEdge,ExtendShortLane
+from .c_cleaning import GetYellowInnerEdge #,ExtendShortLane
 from .d_data_extraction import FetchInfoAndDisplay
 
 
@@ -18,13 +18,11 @@ def detect_lanes(img):
     # [Lane Detection] STAGE_3 (Cleaning) <<<<<<--->>>>>> [STEP_1]:
     OuterLane_OneSide,Outer_cnts_oneSide,Mid_cnts,Offset_correction = GetYellowInnerEdge(outerlane_side_sep,estimated_midlane,outerlane_points)#3ms
     # [Lane Detection] STAGE_3 (Cleaning) <<<<<<--->>>>>> [STEP_2]:
-    extended_midlane,extended_outerlane = ExtendShortLane(estimated_midlane.copy(),Mid_cnts,Outer_cnts_oneSide,OuterLane_OneSide.copy())
 
     # [Lane Detection] STAGE_4 (Data_Extraction) <<<<<<--->>>>>> [Our Approach]:
     Distance , Curvature = FetchInfoAndDisplay(mid_lane_edge,estimated_midlane.copy(),OuterLane_OneSide.copy(),img_cropped,Offset_correction)
    # print("Done")
     cv2.imshow("mid_lane_edge",mid_lane_edge)
-    cv2.imshow("extended_midlane",extended_midlane)
     
     cv2.waitKey(1)
 

@@ -4,39 +4,80 @@ import numpy as np
 from .utilities import GetEuclideanDistance,Sort_Contour_Coordinates
 
 
+debuggingEnabled=False
+
 #CLEANING IS SORT OF UNNECESSARY, BUT IT ENSURES SMOOTHNESS IN DETECTION
 
-def IsPathCrossingMid(Midlane,MidlaneContour,OuterLaneContours):
-    is_Ref_to_path_Left = 0
-    Ref_To_CarPath_Image = np.zeros_like(Midlane)
-    
-    Midlane_copy = Midlane.copy()
 
+#Check if trajectory makes the car swerve throught the midlane
+def DoesPathCrossMidlane(Midlane,MidlaneContour,OuterLaneContours):
+    IsTrajectoryLeftOfMidlane= 0
+    Ref_To_CarPath_Image = np.zeros_like(Midlane)
+    Midlane_copy = Midlane.copy()
+    
+    
+    
+
+    #If no detected midlanes, error
     if not MidlaneContour:
         print("[Warning!!!] NO Midlane detected")
     
+    #Sort all contour cordinates
     MidLaneContours_Sorted= Sort_Contour_Coordinates(MidlaneContour,"rows")
     OuterLaneContours_Sorted = Sort_Contour_Coordinates(OuterLaneContours,"rows")
-    Mid_Rows = MidLaneContours_Sorted.shape[0]
-    Outer_Rows = OuterLaneContours_Sorted.shape[0]
-
-    Mid_bottom_Pt = MidLaneContours_Sorted[Mid_Rows-1,:]
-    Outer_bottom_Pt = OuterLaneContours_Sorted[Outer_Rows-1,:]
-
-    CarTraj_bottom_Pt = ( int( (Mid_bottom_Pt[0] + Outer_bottom_Pt[0]  ) / 2 ) , int( (Mid_bottom_Pt[1]  + Outer_bottom_Pt[1] ) / 2 ) )
     
+    #Get shape of sorted coordinates
+    Mid_Rows_Shape = MidLaneContours_Sorted.shape[0]
+    Outer_Rows_Shape = OuterLaneContours_Sorted.shape[0]
 
-    cv2.line(Ref_To_CarPath_Image,CarTraj_bottom_Pt,(int(Ref_To_CarPath_Image.shape[1]/2),Ref_To_CarPath_Image.shape[0]),(255,255,0),2)# line from carstart to car path
-    cv2.line(Midlane_copy,tuple(Mid_bottom_Pt),(Mid_bottom_Pt[0],Midlane_copy.shape[0]-1),(255,255,0),2)# connecting midlane to bottom
-    #cv2.imshow("fawk",Ref_To_CarPath_Image)
+    #Get the Bottom most points of the lanes as well as the car trajectory in (x,y) format
+    MidLane_BottomMost_Pt = MidLaneContours_Sorted[Mid_Rows_Shape-1,:]
+    OuterLane_BottomMost_Pt = OuterLaneContours_Sorted[Outer_Rows_Shape-1,:]
+    CarTrajectory_BottomPoint =  int( (MidLane_BottomMost_Pt[0] + OuterLane_BottomMost_Pt[0]  ) / 2 ) , int( (MidLane_BottomMost_Pt[1]  + OuterLane_BottomMost_Pt[1] ) / 2 ) 
+    
+    # Draw line from bottom of car to trajectory bottom point
+    cv2.line(Ref_To_CarPath_Image,CarTrajectory_BottomPoint,(int(Ref_To_CarPath_Image.shape[1]/2),Ref_To_CarPath_Image.shape[0]),(255,255,0),2)
+    
+    # Draw midlane connection line from bottom most midlane point to bottom of image
+    cv2.line(Midlane_copy,MidLane_BottomMost_Pt,( MidLane_BottomMost_Pt[0],Midlane_copy.shape[0]-1),(255,255,0),2)
+    
+   
 
-    is_Ref_to_path_Left = ( (int(Ref_To_CarPath_Image.shape[1]/2) - CarTraj_bottom_Pt[0]) > 0 )
+    
+    if debuggingEnabled:
+        Midlane_copy2 = Midlane.copy()
+        cv2.line(Midlane_copy2,CarTrajectory_BottomPoint,(int(Ref_To_CarPath_Image.shape[1]/2),Ref_To_CarPath_Image.shape[0]),(255,255,0),5)# line from carstart to car path
+        cv2.line(Midlane_copy2,tuple( MidLane_BottomMost_Pt),( MidLane_BottomMost_Pt[0],Midlane_copy.shape[0]-1),(255,255,0),10)# connecting midlane to 
+        
+        cv2.circle(Midlane_copy2,tuple(CarTrajectory_BottomPoint),5,(255,255,255),-1)
+        cv2.circle(Midlane_copy2,tuple(MidLane_BottomMost_Pt),5,(255,0,255),-1)
+        cv2.circle(Midlane_copy2,tuple(OuterLane_BottomMost_Pt),5,(255,255,0),-1)
+        
+        cv2.circle(Midlane_copy2,(Ref_To_CarPath_Image.shape[1]//2, Ref_To_CarPath_Image.shape[0]//2 ),10,(255,255,0),-1)
+        
+        print(Ref_To_CarPath_Image.shape[1]/2,CarTrajectory_BottomPoint[0],(int(Ref_To_CarPath_Image.shape[1]/2) - CarTrajectory_BottomPoint[0]))
+        cv2.imshow("Midlane crossing debug",Midlane_copy2 )
 
+    
+    
+    #if x1 is to the right of x2, then (x1-x2) >0
+    #else x1 is the left of x2 if (x1-x2) <0int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0])
+    #Same way, check if the trajectory path passes through the midlane from the left or to the right by subtracting the x coords
+    IsTrajectoryLeftOfMidlane = ( int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0]) > 0 )
+    
+    if debuggingEnabled:
+        print(IsTrajectoryLeftOfMidlane ,int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0]))
+    
+    
+    #If theres is overlap betweem the Car trajectory line and midlane contours, then return True and also what direction it is overlapping from
     if( np.any( (cv2.bitwise_and(Ref_To_CarPath_Image,Midlane_copy) > 0) ) ):
-        # Midlane and CarPath Intersets (MidCrossing)
-        return True,is_Ref_to_path_Left
+        #print("Yes")
+        return True,IsTrajectoryLeftOfMidlane 
     else:
-        return False,is_Ref_to_path_Left
+    #Else return false and also what direction it is overlapping from
+        
+        #print("No")
+        return False,IsTrajectoryLeftOfMidlane 
 
 
 def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
@@ -46,30 +87,24 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
 
     # 1. Extracting Mid and OuterLaneImage Contours
     MidlaneContours = cv2.findContours(MidLane, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
-    cv2.drawContours(MidlaneZerosCopy,MidlaneContours,-1,(255,0,0),3)
-    #cv2.imshow("MidlaneZerosCopy cnt",MidlaneZerosCopy)
     OuterLaneContours = cv2.findContours(OuterLanes, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[1]
 
-    # 2. Checking if OuterLaneImage was Present initially or not
+    # 2. Keep flag to check whether the outer lane contours was present in the last frame
     if not OuterLaneContours:
         NoOuterLane_before=True
     else:
         NoOuterLane_before=False
 
-    # 3. Setting the first contour of Midlane as Refrence
-    Ref = (0,0) #If MidContours are present use the first ContourPoint as Ref To Find Nearest YellowLaneContour
-    if(MidlaneContours):
+    # 3. Create a ref point in the mid lane contour (Initial value for now)
+    Ref = (0,0) 
+    #Use reference to Find Nearest YellowLaneContour
+    if MidlaneContours:
         Ref = tuple(MidlaneContours[0][0][0])
-        #cv2.circle(MidlaneZerosCopy,Ref,10,(255,255,255),-1)
-        #cv2.imshow("MidlaneZerosCopy cnt",MidlaneZerosCopy)
-
     
     # 4. >>>>>>>>>>>>>> Condition 1 : if Both Midlane and Outlane is detected <<<<<<<<<<<<<
     if MidlaneContours:
-        #print("Condition 1!")
         
-        # 4.A                    ******[len(OuterLane_Points)==2)] *******
-        # (a) Fetching side of outelane nearest to midlane
+        #If both outer lanes were detected , pick the nearest one
         if  (len(OuterLane_Points)==2):
             Point_a = OuterLane_Points[0]
             Point_b = OuterLane_Points[1]
@@ -83,26 +118,23 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
             Outer_cnts_ret = [OuterLaneContours[Closest_Index]]
 
         # (b) If Correct outlane was detected =====================================
-            IsPathCrossing , IsCrossingLeft = IsPathCrossingMid(MidLane,MidlaneContours,Outer_cnts_ret)
-            if(IsPathCrossing):
+            IsPathCrossing , IsCrossingLeft = DoesPathCrossMidlane(MidLane,MidlaneContours,Outer_cnts_ret)
+            if (IsPathCrossing):
                 OuterLanes = np.zeros_like(OuterLanes)
             else:
                 return Outer_Lanes_ret ,Outer_cnts_ret, MidlaneContours,0
 
-
         # 4.B                    ******[len(OuterLane_Points)!=2)] ********
         elif( np.any(OuterLanes>0) ):
-            IsPathCrossing , IsCrossingLeft = IsPathCrossingMid(MidLane,MidlaneContours,OuterLaneContours)
+            IsPathCrossing , IsCrossingLeft = DoesPathCrossMidlane(MidLane,MidlaneContours,OuterLaneContours)
             if(IsPathCrossing):
-                OuterLanes = np.zeros_like(OuterLanes)#Empty outerLane 
+                OuterLanes = np.zeros_like(OuterLanes)#Empty outerLane
             else:
                 return OuterLanes ,OuterLaneContours, MidlaneContours,0
-
+        
         # 4. >>>>>>>>>>>>>> Condition 2 : if MidLane is present but no Outlane detected >>>>>>>>>>>>>> Or Outlane got zerod because of crossings Midlane
         # Action: Create Outlane on Side that represent the larger Lane as seen by camera
-        
         if(not np.any(OuterLanes>0)):
-           # print("Condition 2!")
             # Fetching the column of the lowest point of the midlane 
             MidLaneContours_Sorted= Sort_Contour_Coordinates(MidlaneContours,"rows")
             Mid_Rows = MidLaneContours_Sorted.shape[0]
@@ -141,75 +173,7 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
         #print("Condition 3!")
         return OuterLanes, OuterLaneContours, MidlaneContours, Offset_correction
 
-# def ExtendShortLane(MidLaneImage, MidlaneContours, OuterLaneContours,OuterLaneImage):
 
-#     # 1. Sorting the Mid and Outer Contours (check Sort_contour_coordinates for more info)
-#     if(MidlaneContours and OuterLaneContours):
-#         MidLaneContours_Sorted= Sort_Contour_Coordinates(MidlaneContours,"rows")
-#         OuterLaneContours_Sorted = Sort_Contour_Coordinates(OuterLaneContours,"rows")
-#         Image_bottom = MidLaneImage.shape[0]
-#         TotalNumberOfMidLaneContours = MidLaneContours_Sorted.shape[0]
-#         TotalNumberOfOuterLaneContours= OuterLaneContours_Sorted.shape[0]
-
-#         # 2. Connect Midlane to imagebottom by drawing a Vertical line if not alraedy connected
-#         BottomPointofMidLane = MidLaneContours_Sorted[TotalNumberOfMidLaneContours-1]
-        
-#         if (BottomPointofMidLane[1] < Image_bottom):
-#             MidLaneImage = cv2.line(MidLaneImage,tuple(BottomPointofMidLane),(BottomPointofMidLane[0],Image_bottom),255,2)
-
-#         # 3. Connect Outerlane to imagebottom by performing 2 steps (if neccasary)
-#             # [Step 1]: Extend Outerlane in the direction of its slope
-
-#         ## A) Taking last 20 points to estimate slope
-#         BottomPointOfOuterLane = OuterLaneContours_Sorted[TotalNumberOfOuterLaneContours -1]
-        
-#         if (BottomPointOfOuterLane[1] < Image_bottom):
-#             if(TotalNumberOfOuterLaneContours >20):
-#                 shift=20
-#             else:
-#                 shift=2
-#             #Incase screw up happens, change to RefLast10Points = OuterLaneContours_Sorted[ TotalNumberOfOuterLaneContours-shift : TotalNumberOfOuterLaneContours-1:2 ]
-#             RefLast10Points = OuterLaneContours_Sorted[ TotalNumberOfOuterLaneContours-shift : TotalNumberOfOuterLaneContours-1 ]
-
-#             ## B) Estimating Slope
-#             if(len(RefLast10Points)>1):# Atleast 2 points needed to estimate a line
-#                 Ref_x = RefLast10Points[:,0]#cols
-#                 Ref_y = RefLast10Points[:,1]#rows
-#                 Ref_parameters = np.polyfit(Ref_x, Ref_y, 1)
-#                 Ref_slope = Ref_parameters[0]
-#                 Ref_yiCntercept = Ref_parameters[1]
-                
-                
-#                 # Ref_x1 = RefLast10Points[:,0]#cols
-#                 # Ref_y1 = RefLast10Points[:,1]#rows
-#                 # Ref_parameters1 = np.polyfit(Ref_x1, Ref_y1, 1)
-#                 # Ref_yiCntercept1 = Ref_parameters1[1]
-#                 # print("Y intercept without taking all point",Ref_yiCntercept1)
-                
-                
-                
-                
-#                 cv2.imshow("OuterLane before extension",OuterLaneImage)
-#                 ## C) Extending outerlane in the direction of its slope
-#                 if(Ref_slope < 0):
-#                     Ref_LineTouchPoint_col = 0
-#                     Ref_LineTouchPoint_row = Ref_yiCntercept
-#                 else:
-#                     Ref_LineTouchPoint_col = OuterLaneImage.shape[1]-1 # Cols have lenth of ColLength But traversal is from 0 to ColLength-1
-#                     Ref_LineTouchPoint_row = Ref_slope * Ref_LineTouchPoint_col + Ref_yiCntercept
-#                 Ref_TouchPoint = (Ref_LineTouchPoint_col,int(Ref_LineTouchPoint_row))#(col ,row)
-#                 Ref_BottomPoint_tup = tuple(BottomPointOfOuterLane)
-#                 OuterLaneImage = cv2.line(OuterLaneImage,Ref_TouchPoint,Ref_BottomPoint_tup,255,2)
-#                 cv2.imshow("OuterLane after extension",OuterLaneImage)
-                
-
-#                 # 3 [Step 2]: If required, connect outerlane to bottom by drawing a vertical line
-#                 if(Ref_LineTouchPoint_row < Image_bottom):
-#                     Ref_TouchPoint_Ref = (Ref_LineTouchPoint_col,Image_bottom)
-#                     OuterLaneImage = cv2.line(OuterLaneImage,Ref_TouchPoint,Ref_TouchPoint_Ref,255,3)
-                
-
-#     return MidLaneImage,OuterLaneImage
 
 
         
