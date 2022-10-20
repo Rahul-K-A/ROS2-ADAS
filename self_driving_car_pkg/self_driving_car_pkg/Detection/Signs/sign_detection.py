@@ -45,7 +45,7 @@ def sign_det_n_track(gray,frame,frame_draw):
                     # 4d. Indicating localized potential sign on frame and also displaying seperatly
                     cv2.circle(frame_draw,(i[0],i[1]),i[2],(0,165,255),1) # draw the outer circle
                     cv2.circle(frame_draw,(i[0],i[1]),2,(0,0,255),3) # draw the center of the circle
-                    cv2.imshow("ROI",localized_sign)
+                    #cv2.imshow("ROI",localized_sign)
                     sign = sign_classes[np.argmax(model(image_forKeras(localized_sign)))]
                     # 5d. Check if Classified Region is a Sign
                     if(sign != "No_Sign"):
@@ -71,35 +71,11 @@ def sign_det_n_track(gray,frame,frame_draw):
                             sign_tracker.known_centers_confidence.append(1)
                             sign_tracker.known_centers_classes_confidence.append(list(to_categorical(sign_classes.index(sign),num_classes=6)))
 
-                    # Saving dataset
-                    if save_dataset:
-                        if  (sign =="speed_sign_30"):
-                            class_id ="/0"
-                        elif(sign =="speed_sign_60"):
-                            class_id ="/1"
-                        elif(sign =="speed_sign_90"):
-                            class_id ="/2"
-                        elif(sign =="stop"):
-                            class_id ="/3"
-                        elif(sign =="left_turn"):
-                            class_id ="/4"
-                        else:
-                            class_id ="/5"
-
-                        global iter,saved_no
-                        iter = iter + 1 
-                        # save evert 5 th image
-                        if ((iter%5) ==0):
-                            saved_no = saved_no + 1
-                            img_dir = os.path.abspath("self_driving_car_pkg/self_driving_car_pkg/data/live_dataset") + class_id
-                            img_name = img_dir + "/" + str(saved_no)+".png"
-                            if not os.path.exists(img_dir):
-                                os.makedirs(img_dir)
                             
                 except Exception as e:
                     print(e)
                     pass
-            cv2.imshow("Signs Localized",frame_draw)
+            #cv2.imshow("Signs Localized",frame_draw)
     else:
         # Tracking Mode
         sign_tracker.track(gray,frame_draw)
@@ -122,6 +98,6 @@ def detect_signs(frame,frame_draw):
 
     gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
-    sign_det_n_track(gray,frame,frame_draw)
+    #sign_det_n_track(gray,frame,frame_draw)
 
-    return sign_tracker.mode,sign_tracker.Tracked_class
+    return None,None

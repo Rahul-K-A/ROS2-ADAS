@@ -10,7 +10,7 @@ def estimate_midlane(midlane_patches,MaxAllowedDistance):
     midlane_connectivity_bgr = cv2.cvtColor(midlane_patches,cv2.COLOR_GRAY2BGR)
 
     # 2. Extract the Contours that define each object
-    contours = cv2.findContours(midlane_patches,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[1]
+    contours = cv2.findContours(midlane_patches,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[0]
 
     # 3. Keep Only those contours that are not lines 
     MinimumArea = 1

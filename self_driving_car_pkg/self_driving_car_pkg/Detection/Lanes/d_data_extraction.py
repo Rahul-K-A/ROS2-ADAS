@@ -9,8 +9,8 @@ debuggingEnabled=False
 
 def LanePoints(midlane,outerlane,offset):
     
-    mid_cnts = cv2.findContours(midlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
-    outer_cnts = cv2.findContours(outerlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
+    mid_cnts = cv2.findContours(midlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0]
+    outer_cnts = cv2.findContours(outerlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0]
 
     if mid_cnts and outer_cnts:
         mid_cnts_row_sorted = Sort_Contour_Coordinates(mid_cnts,"rows")
@@ -49,7 +49,7 @@ def LanePoints(midlane,outerlane,offset):
 
 def EstimateNonMidMask(MidEdgeROi):
     Mid_Hull_Mask = np.zeros((MidEdgeROi.shape[0], MidEdgeROi.shape[1], 1), dtype=np.uint8)
-    contours = cv2.findContours(MidEdgeROi,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[1]
+    contours = cv2.findContours(MidEdgeROi,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[0]
     if contours:
         hull_list = []
         contours = np.concatenate(contours)
@@ -77,7 +77,7 @@ def FetchInfoAndDisplay(Mid_lane_edge,Mid_lane,Outer_Lane,frame,Offset_correctio
     Lanes_combined = cv2.bitwise_or(Outer_Lane,Mid_lane)
     cv2.imshow("Lanes_combined",Lanes_combined)
     ProjectedLane = np.zeros(Lanes_combined.shape,Lanes_combined.dtype)
-    cnts = cv2.findContours(Lanes_combined,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(Lanes_combined,cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)[0]
 
     # 5. Fill ProjectedLane with fillConvexPoly
     if cnts:

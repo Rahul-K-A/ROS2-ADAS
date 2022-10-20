@@ -13,7 +13,7 @@ def RejectSmallerContours(img,MinArea):
 
     thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY)[1]
     # Filter using contour area and remove small noise
-    cnts = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
     cnts_TooSmall = []
     for index, cnt in enumerate(cnts):
         area = cv2.contourArea(cnt)
@@ -56,7 +56,7 @@ def ReturnLargestContour(gray):
     thresh=np.zeros(gray.shape,dtype=gray.dtype)
     _,bin_img = cv2.threshold(gray,0,255,cv2.THRESH_BINARY)
     #Find the two Contours for which you want to find the min distance between them.
-    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
     Max_Cntr_area = 0
     Max_Cntr_idx= -1
     for index, cnt in enumerate(cnts):
@@ -84,7 +84,7 @@ def ReturnLargestContour_OuterLane(gray,minArea):
    # cv2.imshow("Closed image",bin_img)
     
     #Iterate through all image contours and find the largest contours
-    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[1]
+    cnts = cv2.findContours(bin_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
     MaxContourArea  = 0
     MaxContour_Index= -1
     for index, cnt in enumerate(cnts):
@@ -139,11 +139,11 @@ def ReturnLowestEdgePoints(contourImage):
     _,bin_img = cv2.threshold(contourImage,0,255,cv2.THRESH_BINARY)
     
     #Find the two Contours for which you want to find the min distance between them.
-    cnts = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[1]
+    cnts = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
     thresh = cv2.drawContours(thresh, cnts, 0, (255,255,255), 1) # [ contour = less then minarea contour, contourIDx, Colour , Thickness ]
 
 
-    cnts2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[1]
+    cnts2 = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]
     
     # cv2.imshow("Thresh11",thresh)
     # cv2.imshow("Thresh22",thresh2)

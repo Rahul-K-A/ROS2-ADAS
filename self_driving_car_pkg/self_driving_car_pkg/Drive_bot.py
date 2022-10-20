@@ -12,7 +12,7 @@ class Control():
         self.speed = 80
         # Cruise_Control Variable
         self.prev_Mode = "Detection"
-        self.IncreaseTireSpeedInTurns = True
+        self.IncreaseTireSpeedInTurns = False
     
     def follow_lane(self,max_sane_dist,dist,curv,mode,tracked_class):
         #2. Cruise control speed adjusted to match road speed limit
