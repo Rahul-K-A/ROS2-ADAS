@@ -1,12 +1,3 @@
-"""
- This File is a subscriber for the node "/camera/image_raw"
- The video stream will be saved into your home folder
-
-
- Date  : 9/7/2021
- Author:  M.Luqman
-
-"""
 
 import rclpy 
 import cv2 

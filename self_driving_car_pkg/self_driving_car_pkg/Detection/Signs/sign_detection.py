@@ -50,7 +50,7 @@ def sign_det_n_track(gray,frame,frame_draw):
                     # 5d. Check if Classified Region is a Sign
                     if(sign != "No_Sign"):
                         # 4i. Display Class                      
-                        cv2.putText(frame_draw,sign,(endP[0]-80,startP[1]-10),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1)
+                        #cv2.putText(frame_draw,sign,(endP[0]-80,startP[1]-10),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1)
                         # 4d. Display confirmed sign in green circle
                         cv2.circle(frame_draw,(i[0],i[1]),i[2],(0,255,0),2) # draw the outer circle
 
@@ -95,8 +95,7 @@ def sign_det_n_track(gray,frame,frame_draw):
                             img_name = img_dir + "/" + str(saved_no)+".png"
                             if not os.path.exists(img_dir):
                                 os.makedirs(img_dir)
-                            cv2.imwrite(img_name , localized_sign)
-
+                            
                 except Exception as e:
                     print(e)
                     pass

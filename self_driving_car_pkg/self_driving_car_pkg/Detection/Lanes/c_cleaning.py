@@ -44,6 +44,15 @@ def DoesPathCrossMidlane(Midlane,MidlaneContour,OuterLaneContours):
    
 
     
+    
+
+    
+    
+    #if x1 is to the right of x2, then (x1-x2) >0
+    #else x1 is the left of x2 if (x1-x2) <0 int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0])
+    #Same way, check if the trajectory path passes through the midlane from the left or to the right by subtracting the x coords
+    IsTrajectoryLeftOfMidlane = ( int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0]) > 0 )
+    
     if debuggingEnabled:
         Midlane_copy2 = Midlane.copy()
         cv2.line(Midlane_copy2,CarTrajectory_BottomPoint,(int(Ref_To_CarPath_Image.shape[1]/2),Ref_To_CarPath_Image.shape[0]),(255,255,0),5)# line from carstart to car path
@@ -57,15 +66,6 @@ def DoesPathCrossMidlane(Midlane,MidlaneContour,OuterLaneContours):
         
         print(Ref_To_CarPath_Image.shape[1]/2,CarTrajectory_BottomPoint[0],(int(Ref_To_CarPath_Image.shape[1]/2) - CarTrajectory_BottomPoint[0]))
         cv2.imshow("Midlane crossing debug",Midlane_copy2 )
-
-    
-    
-    #if x1 is to the right of x2, then (x1-x2) >0
-    #else x1 is the left of x2 if (x1-x2) <0int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0])
-    #Same way, check if the trajectory path passes through the midlane from the left or to the right by subtracting the x coords
-    IsTrajectoryLeftOfMidlane = ( int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0]) > 0 )
-    
-    if debuggingEnabled:
         print(IsTrajectoryLeftOfMidlane ,int(Ref_To_CarPath_Image.shape[1]/2 - CarTrajectory_BottomPoint[0]))
     
     
@@ -109,11 +109,19 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
             Point_a = OuterLane_Points[0]
             Point_b = OuterLane_Points[1]
             
+            #Pick the right most outer lane
             Closest_Index = 0
-            if(GetEuclideanDistance(Point_a,Ref) <= GetEuclideanDistance(Point_b,Ref)):
+            if (Ref[0]-Point_a[0])>0:
                 Closest_Index=0
-            elif(len(OuterLaneContours)>1):
+            else:
                 Closest_Index=1
+                
+            
+            
+            # if(GetEuclideanDistance(Point_a,Ref) <= GetEuclideanDistance(Point_b,Ref)):
+            #     Closest_Index=0
+            # elif(len(OuterLaneContours)>1):
+            #     Closest_Index=1
             Outer_Lanes_ret = cv2.drawContours(Outer_Lanes_ret, OuterLaneContours, Closest_Index, 255, 1)
             Outer_cnts_ret = [OuterLaneContours[Closest_Index]]
 
@@ -155,11 +163,11 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
             if DrawRight:
                 low_Col=(int(MidLane.shape[1])-1)
                 high_Col=(int(MidLane.shape[1])-1)
-                Offset_correction = 20
+                Offset_correction = 25
             else:
                 low_Col=0
                 high_Col=0
-                Offset_correction = -20
+                Offset_correction = -25
             
             Mid_lowP[1] = MidLane.shape[0]# setting mid_trajectory_lowestPoint_Row to MaxRows of Image
             LanePoint_lower =  (low_Col , int( Mid_lowP[1] ) )

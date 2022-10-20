@@ -3,6 +3,8 @@ from .Detection.Lanes.lane_detection import detect_lanes
 from numpy import interp,uint16
 from .Detection.Signs.sign_detection import detect_signs
 
+debugEnabled=False
+
 class Control():
     def __init__(self):
         # Lane assist Variable
@@ -10,20 +12,24 @@ class Control():
         self.speed = 80
         # Cruise_Control Variable
         self.prev_Mode = "Detection"
-        self.IncreaseTireSpeedInTurns = False
+        self.IncreaseTireSpeedInTurns = True
     
     def follow_lane(self,max_sane_dist,dist,curv,mode,tracked_class):
         #2. Cruise control speed adjusted to match road speed limit
-        if((tracked_class!=0) and (self.prev_Mode == "Tracking") and (mode == "Detection")):
-            if  (tracked_class =="speed_sign_30"):
-                self.speed = 30
-            elif(tracked_class =="speed_sign_60"):
-                self.speed = 60
-            elif(tracked_class =="speed_sign_90"):
-                self.speed = 90
-            elif(tracked_class =="stop"):
-                self.speed = 0
-                print("Stopping Car !!!")
+        self.speed=60
+        
+        if debugEnabled:
+            if((tracked_class!=0) and (self.prev_Mode == "Tracking") and (mode == "Detection")):
+                if  (tracked_class =="speed_sign_30"):
+                    self.speed = 30
+                elif(tracked_class =="speed_sign_60"):
+                    self.speed = 60
+                elif(tracked_class =="speed_sign_90"):
+                    self.speed = 90
+                elif(tracked_class =="stop"):
+                    self.speed = 0
+                    print("Stopping Car !!!")
+        
             
         self.prev_Mode = mode # Set prevMode to current Mode
 
@@ -108,7 +114,7 @@ class Car():
         cv2.putText(frame_disp,str(angle_speed_str),(20,20),cv2.FONT_HERSHEY_DUPLEX,0.4,(0,0,255),1)
         
         font_Scale = 0.37
-        cv2.putText(frame_disp,"Sign Detected ==> "+str(tracked_class),(20,80),cv2.FONT_HERSHEY_COMPLEX,font_Scale,(0,255,255),1)    
+       # cv2.putText(frame_disp,"Sign Detected ==> "+str(tracked_class),(20,80),cv2.FONT_HERSHEY_COMPLEX,font_Scale,(0,255,255),1)    
 
     def drive_car(self,frame):
 

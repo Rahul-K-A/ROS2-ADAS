@@ -3,7 +3,12 @@ import numpy as np
 
 from .utilities import Sort_Contour_Coordinates,findlaneCurvature
 
+debuggingEnabled=False
+
+#Need to offset because we are only estimating the outerlane, not the actual outerlane
+
 def LanePoints(midlane,outerlane,offset):
+    
     mid_cnts = cv2.findContours(midlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
     outer_cnts = cv2.findContours(outerlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1]
 
@@ -21,6 +26,21 @@ def LanePoints(midlane,outerlane,offset):
 
         traj_btm_pt = ( int((m_rows_btm_pt[0] + o_rows_btm_pt[0])/2)+ offset ,int((m_rows_btm_pt[1] + o_rows_btm_pt[1])/2))
         traj_top_pt = ( int((m_rows_top_pt[0] + o_rows_top_pt[0])/2)+ offset ,int((m_rows_top_pt[1] + o_rows_top_pt[1])/2))
+        
+        if debuggingEnabled:
+            Midlane_Copy=cv2.cvtColor(midlane.copy(),cv2.COLOR_GRAY2BGR)
+            
+            traj_btm_pt_og = ( int((m_rows_btm_pt[0] + o_rows_btm_pt[0])/2),int((m_rows_btm_pt[1] + o_rows_btm_pt[1])/2))
+            traj_top_pt_og = ( int((m_rows_top_pt[0] + o_rows_top_pt[0])/2) ,int((m_rows_top_pt[1] + o_rows_top_pt[1])/2))
+            
+            cv2.circle(Midlane_Copy,traj_btm_pt,5,(255,255,255),-1)
+            cv2.circle(Midlane_Copy,traj_top_pt,5,(0,255,0),-1)
+            
+            cv2.circle(Midlane_Copy,traj_top_pt_og,5,(255,0,0),-1)
+            cv2.circle(Midlane_Copy,traj_btm_pt_og,5,(0,0,255),-1)
+            cv2.imshow("Midlane trajectory points debug",Midlane_Copy)
+            
+            
 
         return traj_btm_pt,traj_top_pt
 
