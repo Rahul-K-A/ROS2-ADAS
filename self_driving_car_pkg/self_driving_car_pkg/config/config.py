@@ -58,3 +58,5 @@ MaxDist_resized = int(Resized_height * BWContourOpen_speed_MaxDist_per)
 
 CropHeight = 630 # Required in Camera mounted on top of car 640p
 CropHeight_resized = int( (CropHeight / Ref_imgHeight ) * Resized_height )
+
+yolo_tl_model_path="/home/rahul/ROS2-AMR/self_driving_car_pkg/self_driving_car_pkg/Data/light_best.pt"

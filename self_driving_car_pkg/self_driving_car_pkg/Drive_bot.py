@@ -2,6 +2,8 @@ import cv2
 from .Detection.Lanes.lane_detection import detect_lanes
 from numpy import interp,uint16
 from .Detection.Signs.sign_detection import detect_signs
+from .Detection.TrafficLights.TL_Detector import TLDetection
+from .config.config import yolo_tl_model_path
 
 debugEnabled=False
 
@@ -13,6 +15,7 @@ class Control():
         # Cruise_Control Variable
         self.prev_Mode = "Detection"
         self.IncreaseTireSpeedInTurns = False
+        self.TLDetector=TLDetection(yolo_tl_model_path)
     
     def follow_lane(self,max_sane_dist,dist,curv,mode,tracked_class):
         #2. Cruise control speed adjusted to match road speed limit
@@ -123,10 +126,14 @@ class Car():
         img = cv2.resize(img,(320,240))
 
         img_orig = img.copy()
+        self.Control.TLDetector.detect(img_orig)
         
         distance, Curvature = detect_lanes(img)
+        
 
-        mode, tracked_class = detect_signs(img_orig,img)
+        #mode, tracked_class = detect_signs(img_orig,img)
+        mode="Tracking"
+        tracked_class=0
         
         Current_State = [distance,Curvature,img,mode,tracked_class]
         
