@@ -110,18 +110,18 @@ def GetYellowInnerEdge(OuterLanes,MidLane,OuterLane_Points):
             Point_b = OuterLane_Points[1]
             
             #Pick the right most outer lane
-            Closest_Index = 0
-            if (Ref[0]-Point_a[0])>0:
-                Closest_Index=0
-            else:
-                Closest_Index=1
+            # Closest_Index = 0
+            # if (Ref[0]-Point_a[0])>0:
+            #     Closest_Index=0
+            # else:
+            #     Closest_Index=1
                 
             
             
-            # if(GetEuclideanDistance(Point_a,Ref) <= GetEuclideanDistance(Point_b,Ref)):
-            #     Closest_Index=0
-            # elif(len(OuterLaneContours)>1):
-            #     Closest_Index=1
+            if(GetEuclideanDistance(Point_a,Ref) <= GetEuclideanDistance(Point_b,Ref)):
+                 Closest_Index=0
+            elif(len(OuterLaneContours)>1):
+                 Closest_Index=1
             Outer_Lanes_ret = cv2.drawContours(Outer_Lanes_ret, OuterLaneContours, Closest_Index, 255, 1)
             Outer_cnts_ret = [OuterLaneContours[Closest_Index]]
 

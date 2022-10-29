@@ -13,16 +13,19 @@ class Control():
         self.angle = 0.0
         self.speed = 80
         # Cruise_Control Variable
-        self.prev_Mode = "Detection"
+        self.prev_Mode_Sign = "Detection"
         self.IncreaseTireSpeedInTurns = False
         self.TLDetector=TLDetection(yolo_tl_model_path)
+        self.TL_prev_State=""
+        self.was_TL_last_frame=False
+        self.TL_Ignore_LaneFollow_iter=0
     
     def follow_lane(self,max_sane_dist,dist,curv,mode,tracked_class):
         #2. Cruise control speed adjusted to match road speed limit
         self.speed=60
         
         if debugEnabled:
-            if((tracked_class!=0) and (self.prev_Mode == "Tracking") and (mode == "Detection")):
+            if((tracked_class!=0) and (self.prev_Mode_Sign == "Tracking") and (mode == "Detection")):
                 if  (tracked_class =="speed_sign_30"):
                     self.speed = 30
                 elif(tracked_class =="speed_sign_60"):
@@ -34,7 +37,7 @@ class Control():
                     print("Stopping Car !!!")
         
             
-        self.prev_Mode = mode # Set prevMode to current Mode
+        self.prev_Mode_Sign = mode # Set prevMode to current Mode
 
         max_turn_angle = 90; max_turn_angle_neg =-90; req_turn_angle = 0
 
@@ -63,7 +66,30 @@ class Control():
                 car_speed_turn = interp(self.angle,[-45,-30],[100,80])
                 self.speed = car_speed_turn
                 
-    def drive(self,Current_State):
+    def drive(self,Current_State,Current_TL_state):
+        # if Current_TL_state!="":
+        #     if self.was_TL_last_frame:
+        #         self.was_TL_last_frame=True
+        #         self.TL_Ignore_LaneFollow_iter=0
+        #         if Current_TL_state=="red":
+        #             speed_motor=0.5
+        #         else:
+        #             speed_motor=1.5
+        #         angle_motor=0.0
+        #     else:
+        #         if self.TL_Ignore_LaneFollow_iter<=60:
+        #             if Current_TL_state=="red":
+        #                 speed_motor=0.5
+        #             else:
+        #                 speed_motor=1.5
+        #         angle_motor=0.0
+        #     return angle_motor,speed_motor
+        # 
+        # if Current_TL_state!="":
+        #     if self.TL_prev_State=="red" and Current_TL_state="green":
+                
+        #     if self.TL_prev_Mode:
+                
         [dist,curv,img,mode,tracked_class] = Current_State
 
         if ((dist!=1000)and (curv!= 1000)):
@@ -126,7 +152,8 @@ class Car():
         img = cv2.resize(img,(320,240))
 
         img_orig = img.copy()
-        self.Control.TLDetector.detect(img_orig)
+        TL_state=self.Control.TLDetector.detect(img_orig)
+        #print(TL_state)
         
         distance, Curvature = detect_lanes(img)
         
@@ -137,7 +164,7 @@ class Car():
         
         Current_State = [distance,Curvature,img,mode,tracked_class]
         
-        angle_m,speed_m = self.Control.drive(Current_State)
+        angle_m,speed_m = self.Control.drive(Current_State,TL_state)
 
         self.display_state(img,angle_m,speed_m,tracked_class)
 

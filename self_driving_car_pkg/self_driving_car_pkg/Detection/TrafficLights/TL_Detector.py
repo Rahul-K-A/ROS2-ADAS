@@ -1,3 +1,4 @@
+from curses.ascii import NL
 import torch
 import numpy as np
 import cv2
@@ -34,7 +35,8 @@ class TLDetection:
         :return: Trained Pytorch model.
         """
         if model_name:
-            model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
+            #model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
+            model = torch.hub.load('/home/rahul/yolov5_deploy/yolov5-master','custom', path=model_name,force_reload=True,source='local')
         else:
             model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
         return model
@@ -80,6 +82,20 @@ class TLDetection:
                     break
 
         return frame
+    
+    def getState(self,results):
+        names=[]
+        labels, cord = results
+        n=len(labels)
+        for i in range(n):
+            names.append(self.class_to_label(labels[i]))
+        #print(names)
+        if n>0:
+            return names[0]
+        else:
+            return ""
+            
+        
 
     def detect(self,frame_):
         """
@@ -91,14 +107,17 @@ class TLDetection:
         frame=frame_[:,:,:]
         
         frame=cv2.cvtColor(frame_,cv2.COLOR_BGR2RGB)
-        
+    
     
         #frame = cv2.resize(frame, (416,416))
         
         results = self.score_frame(frame)
+        state=self.getState(results)
+        
         frame = self.plot_boxes(results, frame)
         frame=cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
         cv2.imshow('YOLOv5 Detection', frame)
+        return state
  
    
         

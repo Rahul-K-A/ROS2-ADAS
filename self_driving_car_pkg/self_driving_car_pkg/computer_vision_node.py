@@ -19,7 +19,7 @@ class Video_feed_in(Node):
     def __init__(self):
 
         super().__init__('video_subscriber')
-        self.subscriber = self.create_subscription(Image,'/camera/image_raw',self.process_data,10)
+        self.subscriber = self.create_subscription(Image,'/camera/image_raw',self.process_data,10) #/camera/image_raw for gazebo
         self.publisher = self.create_publisher(Twist, '/cmd_vel', 40)
         timer_period = 0.5;self.timer = self.create_timer(timer_period, self.send_cmd_vel)
 
