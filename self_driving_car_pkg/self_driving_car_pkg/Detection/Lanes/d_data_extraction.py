@@ -3,11 +3,13 @@ import numpy as np
 
 from .utilities import Sort_Contour_Coordinates,findlaneCurvature
 
-debuggingEnabled=True
+debuggingEnabled=False
 
 #Need to offset because we are only estimating the outerlane, not the actual outerlane
 
+
 def LanePoints(midlane,outerlane,offset):
+    """Return the points corresponding to the required trajectory"""
     
     Midlane_contours = cv2.findContours(midlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0]
     outer_cnts = cv2.findContours(outerlane,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0]

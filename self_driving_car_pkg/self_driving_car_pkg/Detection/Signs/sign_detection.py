@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Training_Variables
-save_dataset = True
+save_dataset = False
 iter = 0
 saved_no = 0
 # Classification Imports, Variables N Function (5a)
@@ -12,7 +12,7 @@ import tensorflow as tf
 model_loaded = False
 model = 0
 sign_classes = ["speed_sign_30","speed_sign_60","speed_sign_90","stop","left_turn","No_Sign"] # Trained CNN Classes
-from ..of_tracking import Tracker
+from .Tracker import Tracker
 from tensorflow.keras.utils import to_categorical
 sign_tracker = Tracker()
 
@@ -27,7 +27,7 @@ def sign_det_n_track(gray,frame,frame_draw):
 
     if (sign_tracker.mode=="Detection"):
 
-        circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,100,param1=250,param2=30,minRadius=10,maxRadius=100)
+        circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,100,param1=250,param2=30,minRadius=20,maxRadius=100)
 
         # 4a. Checking if any circular regions were localized
         if circles is not None:
@@ -45,12 +45,12 @@ def sign_det_n_track(gray,frame,frame_draw):
                     # 4d. Indicating localized potential sign on frame and also displaying seperatly
                     cv2.circle(frame_draw,(i[0],i[1]),i[2],(0,165,255),1) # draw the outer circle
                     cv2.circle(frame_draw,(i[0],i[1]),2,(0,0,255),3) # draw the center of the circle
-                    #cv2.imshow("ROI",localized_sign)
+                    cv2.imshow("ROI",localized_sign)
                     sign = sign_classes[np.argmax(model(image_forKeras(localized_sign)))]
                     # 5d. Check if Classified Region is a Sign
                     if(sign != "No_Sign"):
                         # 4i. Display Class                      
-                        #cv2.putText(frame_draw,sign,(endP[0]-80,startP[1]-10),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1)
+                        cv2.putText(frame_draw,sign,(endP[0]-80,startP[1]-10),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1)
                         # 4d. Display confirmed sign in green circle
                         cv2.circle(frame_draw,(i[0],i[1]),i[2],(0,255,0),2) # draw the outer circle
 
@@ -71,11 +71,36 @@ def sign_det_n_track(gray,frame,frame_draw):
                             sign_tracker.known_centers_confidence.append(1)
                             sign_tracker.known_centers_classes_confidence.append(list(to_categorical(sign_classes.index(sign),num_classes=6)))
 
-                            
+                    # Saving dataset
+                    if save_dataset:
+                        if  (sign =="speed_sign_30"):
+                            class_id ="/0"
+                        elif(sign =="speed_sign_60"):
+                            class_id ="/1"
+                        elif(sign =="speed_sign_90"):
+                            class_id ="/2"
+                        elif(sign =="stop"):
+                            class_id ="/3"
+                        elif(sign =="left_turn"):
+                            class_id ="/4"
+                        else:
+                            class_id ="/5"
+
+                        global iter,saved_no
+                        iter = iter + 1 
+                        # save evert 5 th image
+                        if ((iter%5) ==0):
+                            saved_no = saved_no + 1
+                            img_dir = os.path.abspath("self_driving_car_pkg/self_driving_car_pkg/data/live_dataset") + class_id
+                            img_name = img_dir + "/" + str(saved_no)+".png"
+                            if not os.path.exists(img_dir):
+                                os.makedirs(img_dir)
+                            cv2.imwrite(img_name , localized_sign)
+
                 except Exception as e:
                     print(e)
                     pass
-            #cv2.imshow("Signs Localized",frame_draw)
+            cv2.imshow("Signs Localized",frame_draw)
     else:
         # Tracking Mode
         sign_tracker.track(gray,frame_draw)
@@ -91,13 +116,13 @@ def detect_signs(frame,frame_draw):
         print("************ LOADING MODEL **************")
         # 1. Load CNN model
         global model
-        model = load_model(os.path.join(os.getcwd(),"self_driving_car_pkg/self_driving_car_pkg/Data/saved_model_5_Sign.h5"),compile=False)
+        model = load_model("/home/rahul/ROS2-AMR/self_driving_car_pkg/self_driving_car_pkg/Data/saved_model_5_Sign.h5",compile=False)
         # summarize model.
         model.summary()
         model_loaded = True
 
     gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
-    #sign_det_n_track(gray,frame,frame_draw)
+    sign_det_n_track(gray,frame,frame_draw)
 
-    return None,None
+    return sign_tracker.mode,sign_tracker.Tracked_class

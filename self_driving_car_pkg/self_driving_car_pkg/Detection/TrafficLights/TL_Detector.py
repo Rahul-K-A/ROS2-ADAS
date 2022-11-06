@@ -3,37 +3,25 @@ import torch
 import numpy as np
 import cv2
 from time import time
-
+from .Tf_tracker import Tracker
+from math import dist
 
 class TLDetection:
-    """
-    Class implements Yolo5 model to make inferences on a youtube video using Opencv2.
-    """
 
     def __init__(self,model_path):
-        """
-        Initializes the class with youtube url and output file.
-        :param url: Has to be as youtube URL,on which prediction is made.
-        :param out_file: A valid output file name.
-        """
+
         self.model = self.load_model(model_path)
         self.classes = self.model.names
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.TLTracker=Tracker()
+        self.closeProximity= False
+        self.ThresholdArea= 5000.00
         print("Using Device: ", self.device)
 
     def get_video_capture(self):
-        """
-        Creates a new video streaming object to extract video frame by frame to make prediction on.
-        :return: opencv2 video capture object, with lowest quality frame available for video.
-        """
-      
         return cv2.VideoCapture(self.capture_index)
 
     def load_model(self, model_name):
-        """
-        Loads Yolo5 model from pytorch hub.
-        :return: Trained Pytorch model.
-        """
         if model_name:
             #model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_name, force_reload=True)
             model = torch.hub.load('/home/rahul/yolov5_deploy/yolov5-master','custom', path=model_name,force_reload=True,source='local')
@@ -41,12 +29,13 @@ class TLDetection:
             model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
         return model
 
+
+    def GetBBArea(self,x1,y1,x2,y2):
+        area=dist((x1,0),(x2,0)) * dist((0,y1),(0,y2))
+        #print(area)
+        return area
+        
     def score_frame(self, frame):
-        """
-        Takes a single frame as input, and scores the frame using yolo5 model.
-        :param frame: input frame in numpy/list/tuple format.
-        :return: Labels and Coordinates of objects detected by model in the frame.
-        """
         self.model.to(self.device)
         frame = [frame]
         results = self.model(frame)
@@ -54,70 +43,63 @@ class TLDetection:
         return labels, cord
 
     def class_to_label(self, x):
-        """
-        For a given label value, return corresponding string label.
-        :param x: numeric label
-        :return: corresponding string label
-        """
         return self.classes[int(x)]
 
-    def plot_boxes(self, results, frame):
-        """
-        Takes a frame and its results as input, and plots the bounding boxes and label on to the frame.
-        :param results: contains labels and coordinates predicted by model on the given frame.
-        :param frame: Frame which has been scored.
-        :return: Frame with bounding boxes and labels ploted on it.
-        """
+    def plot_boxes(self, results,frame):
         labels, cord = results
-        n = len(labels)
+        n = len(labels)  
         x_shape, y_shape = frame.shape[1], frame.shape[0]
+        best_match=0
+        best_match_pbr=-1
+        tl_state=""
         for i in range(n):
-            row = cord[i]
-            if row[4] >= 0.3:
-                x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
-                bgr = (0, 255, 0)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)
-                cv2.putText(frame, self.class_to_label(labels[i]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
-                if self.class_to_label(labels[i])=="green":
-                    break
-
-        return frame
-    
-    def getState(self,results):
-        names=[]
-        labels, cord = results
-        n=len(labels)
-        for i in range(n):
-            names.append(self.class_to_label(labels[i]))
-        #print(names)
+            row=cord[i]
+            if row[4]>best_match_pbr and row[4]>0.3:
+                best_match=i     
+        center=(-100,-100)
         if n>0:
-            return names[0]
-        else:
-            return ""
+            row=cord[best_match]
+            x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
             
+            print(f"Second pass {self.closeProximity}")
+            self.closeProximity= self.GetBBArea(x1,y1,x2,y2) > self.ThresholdArea
+            print(f"After second pass {self.closeProximity}")
+            
+            bgr = (0, 255, 0)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)
+            cv2.putText(frame, self.class_to_label(labels[i]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
+            x1, y1, x2, y2 = int(row[0]*x_shape), int(row[1]*y_shape), int(row[2]*x_shape), int(row[3]*y_shape)
+            center=( (x1+x2)//2,(y1+y2)//2 )
+            cv2.circle(frame,center,5,(255,0,0))
+            tl_state=self.class_to_label(labels[best_match])
+        return frame,center,tl_state
         
 
     def detect(self,frame_):
-        """
-        This function is called when class is executed, it runs the loop to read the video frame by frame,
-        and write the output into a new file.
-        :return: void
-        """
-        
         frame=frame_[:,:,:]
         
         frame=cv2.cvtColor(frame_,cv2.COLOR_BGR2RGB)
-    
-    
-        #frame = cv2.resize(frame, (416,416))
+        self.closeProximity=False
+        print(f"First pass {self.closeProximity}")
         
         results = self.score_frame(frame)
-        state=self.getState(results)
+
         
-        frame = self.plot_boxes(results, frame)
+        frame,center,current_state = self.plot_boxes(results, frame)
+        #print(self.closeProximity,current_state)
+        self.TLTracker.ProcessCenter(center,frame)
+        if self.TLTracker.currentMode=="Tracking":
+            self.TLTracker.Track(center,frame)
         frame=cv2.cvtColor(frame,cv2.COLOR_RGB2BGR)
         cv2.imshow('YOLOv5 Detection', frame)
-        return state
+        #print()
+        if current_state=="" or current_state=="yellow":
+            current_state="green"
+        
+        
+        closeProximity=self.closeProximity
+        print(f"Final pass {self.closeProximity}")
+        return current_state,closeProximity
  
    
         

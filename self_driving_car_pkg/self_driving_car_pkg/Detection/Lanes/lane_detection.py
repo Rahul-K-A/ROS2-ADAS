@@ -3,7 +3,7 @@ import cv2
 from .a_colour_segmentation import SegmentLanes
 from .b_midlane_estimation import estimate_midlane
 from ...config import config
-from .c_cleaning import GetYellowInnerEdge #,ExtendShortLane
+from .c_cleaning import GetYellowInnerEdge 
 from .d_data_extraction import FetchInfoAndDisplay
 
 
